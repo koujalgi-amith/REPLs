@@ -50,7 +50,8 @@ public class Configuration {
 		properties.load(stream);
 		System.out.println("Configuration '" + Configuration.ENVIRONMENT + ".config.properties" + "' found.");
 		HashMap<Object, Object> map = new HashMap<>();
-		for (@SuppressWarnings("rawtypes") Map.Entry e : properties.entrySet()) {
+		for (@SuppressWarnings("rawtypes")
+		Map.Entry e : properties.entrySet()) {
 			map.put(e.getKey(), e.getValue());
 		}
 		JSONUtils.print(map);
@@ -65,6 +66,10 @@ public class Configuration {
 
 	public String getProperty(String key) {
 		return properties.getProperty(key);
+	}
+
+	public Properties getProperties() {
+		return properties;
 	}
 
 }

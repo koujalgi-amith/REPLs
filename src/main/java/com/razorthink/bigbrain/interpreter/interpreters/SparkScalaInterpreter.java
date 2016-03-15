@@ -58,20 +58,13 @@ public class SparkScalaInterpreter extends Interpreter {
 	private List<ResultListener> listeners = new ArrayList<>();
 	private PrintStream p = null;
 	private String resultStr = "";
+	private boolean inited = false;
 
 	public SparkScalaInterpreter(Properties property) {
 		super(property);
+	}
 
-		if (listeners.isEmpty()) {
-			logger.info("No result listeners added. Adding default console listener...");
-			// add default console listener
-			listeners.add(new ResultListener() {
-				@Override
-				public void onUpdate(String str) {
-					System.out.println(str);
-				}
-			});
-		}
+	public void init() {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		out = new OutputStream() {
 			@Override
@@ -91,6 +84,11 @@ public class SparkScalaInterpreter extends Interpreter {
 			}
 		};
 		p = new PrintStream(out);
+		inited = true;
+	}
+
+	private boolean isInited() {
+		return inited;
 	}
 
 	public void addListener(ResultListener l) {
@@ -129,13 +127,30 @@ public class SparkScalaInterpreter extends Interpreter {
 	}
 
 	public void start() {
+		if (listeners.isEmpty()) {
+			logger.info("No result listeners added. Adding default console listener...");
+			// add default console listener
+			listeners.add(new ResultListener() {
+				@Override
+				public void onUpdate(String str) {
+					System.out.println(str);
+				}
+			});
+		} else {
+			if (listeners.size() == 1) {
+				logger.info(listeners.size() + " listener registered. Results will be logged to that listener.");
+			} else
+				logger.info(listeners.size() + " listeners registered. Results will be logged to those listeners.");
+		}
 		open();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void open() {
-
+		if (!isInited()) {
+			init();
+		}
 		URL[] urls = getClassloaderUrls();
 
 		Settings settings = new Settings();
@@ -294,7 +309,7 @@ public class SparkScalaInterpreter extends Interpreter {
 		return interpretLines(line.split("\n"));
 	}
 
-	public InterpreterResult interpretLines(String[] lines) {
+	private InterpreterResult interpretLines(String[] lines) {
 		synchronized (this) {
 			InterpreterResult r = interpretInput(lines);
 			cleanResultString();
@@ -318,7 +333,7 @@ public class SparkScalaInterpreter extends Interpreter {
 		}
 	}
 
-	public InterpreterResult interpretInput(String[] lines) {
+	private InterpreterResult interpretInput(String[] lines) {
 		if (intp == null) {
 			throw new InterpreterException("Interpreter has been shutdown!");
 		}
